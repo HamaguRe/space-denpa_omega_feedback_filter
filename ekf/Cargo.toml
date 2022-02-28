@@ -1,0 +1,11 @@
+[package]
+name = "ekf"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+rand = "0.6"
+
+[dependencies.quaternion]
+git = "https://github.com/HamaguRe/quaternion.git"
+version = "2.6"
