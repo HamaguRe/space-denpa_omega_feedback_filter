@@ -9,4 +9,3 @@ rand = "0.6"
 [dependencies.quaternion]
 git = "https://github.com/HamaguRe/quaternion.git"
 version = "2.6"
-features = ["fma"]

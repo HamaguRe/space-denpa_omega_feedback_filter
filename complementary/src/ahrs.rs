@@ -9,10 +9,10 @@ const PI: f64 = std::f64::consts::PI;
 /// 標準重力
 pub const STANDARD_GRAVITY: f64 = 9.80665;
 
-/// 基準座標形状における加速度計測値
+/// 基準座標系上における加速度計測値
 pub const ACC_R: [f64; 3] = [0.0, 0.0, STANDARD_GRAVITY];
 
-/// 基準座標形状における地磁気計測値
+/// 基準座標系上における地磁気計測値
 pub const MAG_R: [f64; 3] = [0.0, 1.0, 0.0];
 
 pub struct AttitudeFilter {
@@ -45,11 +45,7 @@ impl AttitudeFilter {
         let q_g = quat::rotate_a_to_b(acc, ACC_R);
         let mag_b_to_r = quat::hadamard_vec(quat::vector_rotation(q_g, mag), [1.0, 1.0, 0.0]);
         let q_e = quat::rotate_a_to_b(mag_b_to_r, MAG_R);
-        let mut q_gm = quat::mul(q_e, q_g);
-        // 符号を合わせる
-        if quat::dot(q_gm, self.q).is_sign_negative() {
-            q_gm = quat::negate(q_gm);
-        }
+        let q_gm = quat::mul(q_e, q_g);
         
         self.q = quat::normalize( quat::lerp(self.q, q_gm, 1.0 - self.k) );
     }

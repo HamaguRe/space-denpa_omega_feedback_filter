@@ -14,6 +14,12 @@ const BETA_DIAG: Vector3<f64> = [0.0; 3];  // 一定と仮定したので0
 /// 標準重力
 pub const STANDARD_GRAVITY: f64 = 9.80665;
 
+/// 基準座標系上における加速度計測値
+pub const ACC_R: [f64; 3] = [0.0, 0.0, STANDARD_GRAVITY];
+
+/// 基準座標系上における地磁気計測値
+pub const MAG_R: [f64; 3] = [0.0, 1.0, 0.0];
+
 // --------- 入出力数 --------- //
 // 以下の状態空間モデルを考える．
 // x[k+1] = F*x[k] + G*w[k],
@@ -266,9 +272,9 @@ impl ExUdFilter {
         let q3 = self.x[3];
 
         // dh1/dx1
-        let r1 = 0.0;
-        let r2 = 0.0;
-        let r3 = STANDARD_GRAVITY;
+        let r1 = ACC_R[0];
+        let r2 = ACC_R[1];
+        let r3 = ACC_R[2];
         self.H[0][0] =  r2*q3 - r3*q2;
         self.H[0][1] =  r3*q3 + r2*q2;
         self.H[0][2] = -q0*r3 - 2.0 * r1*q2 + r2*q1;
@@ -288,9 +294,9 @@ impl ExUdFilter {
         }
 
         // dh2/dx1
-        let r1 = 0.0;
-        let r2 = 1.0;
-        let r3 = 0.0;
+        let r1 = MAG_R[0];
+        let r2 = MAG_R[1];
+        let r3 = MAG_R[2];
         self.H[3][0] = r2 * q3 - r3 * q2;
         self.H[3][1] = r3 * q3 + r2 * q2;
         self.H[3][2] = -q0 * r3 - 2.0*r1*q2 + r2*q1;
@@ -389,8 +395,8 @@ pub fn calc_f(x: VectorN<f64>, gyr: Vector3<f64>) -> VectorN<f64> {
 
 pub fn calc_h(x: VectorN<f64>) -> VectorP<f64> {
     let q = (x[0], [x[1], x[2], x[3]]);
-    let h1 = quat::frame_rotation(q, [0.0, 0.0, STANDARD_GRAVITY]);
-    let h2 = quat::frame_rotation(q, [0.0, 1.0, 0.0]);
+    let h1 = quat::frame_rotation(q, ACC_R);
+    let h2 = quat::frame_rotation(q, MAG_R);
     let mut yhat: VectorP<f64> = unsafe {MaybeUninit::uninit().assume_init()};
     for i in 0..3 {
         yhat[i] = h1[i];

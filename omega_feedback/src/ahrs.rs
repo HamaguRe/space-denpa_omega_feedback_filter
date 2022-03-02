@@ -9,10 +9,10 @@ const PI: f64 = std::f64::consts::PI;
 /// 標準重力
 pub const STANDARD_GRAVITY: f64 = 9.80665;
 
-/// 基準座標形状における加速度計測値
+/// 基準座標系上における加速度計測値
 pub const ACC_R: [f64; 3] = [0.0, 0.0, STANDARD_GRAVITY];
 
-/// 基準座標形状における地磁気計測値
+/// 基準座標系上における地磁気計測値
 pub const MAG_R: [f64; 3] = [0.0, 1.0, 0.0];
 
 pub struct AttitudeFilter {
