@@ -7,7 +7,7 @@ use std::io::{Write, BufWriter};
 use std::mem::MaybeUninit;
 
 use rand::distributions::{Distribution, Normal};
-use quaternion as quat;
+use quaternion_core as quat;
 
 mod ahrs;
 
