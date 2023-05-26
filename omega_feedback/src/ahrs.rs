@@ -48,13 +48,13 @@ impl AttitudeFilter {
     /// 
     /// * gyr: 機体上で計測した角速度[rad/s]
     pub fn predict(&mut self, gyr: Vector3<f64>) {
-        let omega = quat::add_vec(gyr, self.gyr_correct);
+        let omega = quat::add(gyr, self.gyr_correct);
 
         // 積分（q[n+1] = q[n] + Δt/2 *q[n]*ω[n]）
-        let tmp0 = quat::scale_vec(self.q.0, omega);
-        let dot = quat::dot_vec(self.q.1, omega);
-        let cross = quat::cross_vec(self.q.1, omega);
-        let tmp1 = (-dot, quat::add_vec(tmp0, cross));
+        let tmp0 = quat::scale(self.q.0, omega);
+        let dot = quat::dot(self.q.1, omega);
+        let cross = quat::cross(self.q.1, omega);
+        let tmp1 = (-dot, quat::add(tmp0, cross));
         self.q = quat::scale_add(0.5 * DT, tmp1, self.q);
         // 正規化
         self.q = quat::normalize(self.q);
@@ -66,9 +66,9 @@ impl AttitudeFilter {
     /// * mag: 機体上のセンサで計測した地磁気（方向だけわかれば良いので単位不問）
     pub fn correct(&mut self, acc: Vector3<f64>, mag: Vector3<f64>) {
         // accとmagから姿勢q_gmを計算
-        let q_g = quat::rotate_a_to_b(acc, ACC_R);
-        let mag_b2r = quat::hadamard_vec(quat::vector_rotation(q_g, mag), [1.0, 1.0, 0.0]);
-        let q_e = quat::rotate_a_to_b(mag_b2r, MAG_R);
+        let q_g = quat::rotate_a_to_b(acc, ACC_R).unwrap();
+        let mag_b2r = quat::hadamard(quat::point_rotation(q_g, mag), [1.0, 1.0, 0.0]);
+        let q_e = quat::rotate_a_to_b_shortest(mag_b2r, MAG_R, 1.0).unwrap();
         let q_gm = quat::mul(q_e, q_g);
 
         // LPFを通す（q_gmの符号をq_lpfに合わせる）
@@ -82,19 +82,19 @@ impl AttitudeFilter {
         self.q_lpf = quat::normalize( quat::add(term1, term2) );
 
         // qからq_lpfに到達するための角速度を計算
-        let term1 = quat::scale_vec(self.q.0, self.q_lpf.1);
-        let term2 = quat::scale_vec(self.q_lpf.0, self.q.1);
-        let term3 = quat::cross_vec(self.q_lpf.1, self.q.1);
-        self.gyr_correct = quat::scale_vec(self.coef_gyr_c, quat::add_vec(quat::sub_vec(term1, term2), term3));
+        let term1 = quat::scale(self.q.0, self.q_lpf.1);
+        let term2 = quat::scale(self.q_lpf.0, self.q.1);
+        let term3 = quat::cross(self.q_lpf.1, self.q.1);
+        self.gyr_correct = quat::scale(self.coef_gyr_c, quat::add(quat::sub(term1, term2), term3));
         // 符号を合わせる（LPFの前で合わせてるから、シミュレーションなら無くても平気。実環境では必要だと思う）
         if quat::dot(self.q, self.q_lpf).is_sign_negative() {
-            self.gyr_correct = quat::negate_vec(self.gyr_correct);
+            self.gyr_correct = quat::negate(self.gyr_correct);
         }
 
         // 積分項を更新
-        self.gyr_integ = quat::scale_add_vec(DT, self.gyr_correct, self.gyr_integ);
+        self.gyr_integ = quat::scale_add(DT, self.gyr_correct, self.gyr_integ);
 
         // 積分項の値を補正角速度に反映
-        self.gyr_correct = quat::scale_add_vec(self.coef_integ, self.gyr_integ, self.gyr_correct);
+        self.gyr_correct = quat::scale_add(self.coef_integ, self.gyr_integ, self.gyr_correct);
     }
 }

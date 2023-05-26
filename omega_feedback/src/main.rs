@@ -4,7 +4,6 @@
 
 use std::fs;
 use std::io::{Write, BufWriter};
-use std::mem::MaybeUninit;
 
 use rand::distributions::{Distribution, Normal};
 use quaternion_core as quat;
@@ -43,10 +42,10 @@ fn main() {
     for t in 0..N {
         // 積分（q = q + 0.5*Δt*q*ω）
         q = {
-            let tmp0 = quat::scale_vec(q.0, gyr);
-            let dot = quat::dot_vec(q.1, gyr);
-            let cross = quat::cross_vec(q.1, gyr);
-            let tmp1 = (-dot, quat::add_vec(tmp0, cross));
+            let tmp0 = quat::scale(q.0, gyr);
+            let dot = quat::dot(q.1, gyr);
+            let cross = quat::cross(q.1, gyr);
+            let tmp1 = (-dot, quat::add(tmp0, cross));
             quat::scale_add(0.5 * DT, tmp1, q)
         };
         q = quat::normalize(q);
@@ -59,19 +58,19 @@ fn main() {
 
         // 推定
         let gyr_noisy = add_noise(&randn, GYR_VAR, gyr);
-        filter.predict( quat::add_vec(gyr_noisy, gyr_bias) );
+        filter.predict( quat::add(gyr_noisy, gyr_bias) );
         filter.correct(acc_b, mag_b);
 
         // ---------- データ書き込み ---------- //
         // 時刻
         file.write( format!("{:.3},", t as f64 * DT ).as_bytes() ).unwrap();
         // オイラー角の真値
-        let ypr_true = quat::to_euler_angles( q );
+        let ypr_true = quat::to_euler_angles(quat::RotationType::Intrinsic, quat::RotationSequence::ZYX, q);
         for i in 0..3 {
             file.write( format!("{:.7},", ypr_true[i] ).as_bytes() ).unwrap();
         }
         // オイラー角の推定値
-        let ypr_hat = quat::to_euler_angles( filter.q );
+        let ypr_hat = quat::to_euler_angles(quat::RotationType::Intrinsic, quat::RotationSequence::ZYX, filter.q);
         for i in 0..3 {
             file.write( format!("{:.7},", ypr_hat[i] ).as_bytes() ).unwrap();
         }
@@ -105,7 +104,7 @@ fn main() {
 
 /// ベクトルxにノイズを加える．
 fn add_noise(randn: &rand::distributions::Normal, variance: f64, x: quat::Vector3<f64>) -> quat::Vector3<f64> {
-    let mut noisy: quat::Vector3<f64> = unsafe {MaybeUninit::uninit().assume_init()};
+    let mut noisy: quat::Vector3<f64> = [0.0; 3];
 
     let tmp = variance.sqrt();
     for i in 0..3 {
