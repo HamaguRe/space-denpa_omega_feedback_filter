@@ -65,6 +65,7 @@ fn main() {
     let mut y_true = ahrs::calc_h(x);
     let mut y = y_true;
 
+    // 角速度バイアス [rad/s]
     let gyr_bias = [-0.02, 0.01, 0.05];
 
     // ---- Loop start ---- //
@@ -78,7 +79,7 @@ fn main() {
 
         // 推定
         let gyr_noisy = add_noise(&randn, GYR_VAR, gyr);
-        filter.predict( quat::add_vec(gyr_noisy, gyr_bias) );
+        filter.predict( quat::add(gyr_noisy, gyr_bias) );
         filter.filtering(&y);
 
         // ---------- データ書き込み ---------- //
@@ -86,13 +87,13 @@ fn main() {
         file.write( format!("{:.3},", t as f64 * DT ).as_bytes() ).unwrap();
         // オイラー角の真値
         let q = (x[0], [x[1], x[2], x[3]]);
-        let ypr_true = quat::to_euler_angles(q);
+        let ypr_true = quat::to_euler_angles(quat::RotationType::Intrinsic, quat::RotationSequence::ZYX, q);
         for i in 0..3 {
             file.write( format!("{:.7},", ypr_true[i] ).as_bytes() ).unwrap();
         }
         // オイラー角の推定値
         let q_hat = (filter.x[0], [filter.x[1], filter.x[2], filter.x[3]]);
-        let ypr_hat = quat::to_euler_angles(q_hat);
+        let ypr_hat = quat::to_euler_angles(quat::RotationType::Intrinsic, quat::RotationSequence::ZYX, q_hat);
         for i in 0..3 {
             file.write( format!("{:.7},", ypr_hat[i] ).as_bytes() ).unwrap();
         }

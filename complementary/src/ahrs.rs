@@ -31,10 +31,10 @@ impl AttitudeFilter {
 
     pub fn predict(&mut self, gyr: Vector3<f64>) {
         // 積分（q = q + 0.5*Δt*q*ω）
-        let tmp0 = quat::scale_vec(self.q.0, gyr);
-        let dot = quat::dot_vec(self.q.1, gyr);
-        let cross = quat::cross_vec(self.q.1, gyr);
-        let tmp1 = (-dot, quat::add_vec(tmp0, cross));
+        let tmp0 = quat::scale(self.q.0, gyr);
+        let dot = quat::dot(self.q.1, gyr);
+        let cross = quat::cross(self.q.1, gyr);
+        let tmp1 = (-dot, quat::add(tmp0, cross));
         self.q = quat::scale_add(0.5 * DT, tmp1, self.q);
         // 正規化
         self.q = quat::normalize(self.q);
@@ -42,9 +42,9 @@ impl AttitudeFilter {
 
     pub fn filtering(&mut self, acc: Vector3<f64>, mag: Vector3<f64>) {
         // accとmagから姿勢を計算
-        let q_g = quat::rotate_a_to_b(acc, ACC_R);
-        let mag_b_to_r = quat::hadamard_vec(quat::vector_rotation(q_g, mag), [1.0, 1.0, 0.0]);
-        let q_e = quat::rotate_a_to_b(mag_b_to_r, MAG_R);
+        let q_g = quat::rotate_a_to_b(acc, ACC_R).unwrap();
+        let mag_b_to_r = quat::hadamard(quat::point_rotation(q_g, mag), [1.0, 1.0, 0.0]);
+        let q_e = quat::rotate_a_to_b_shortest(mag_b_to_r, MAG_R, 1.0).unwrap();
         let q_gm = quat::mul(q_e, q_g);
         
         self.q = quat::normalize( quat::lerp(self.q, q_gm, 1.0 - self.k) );

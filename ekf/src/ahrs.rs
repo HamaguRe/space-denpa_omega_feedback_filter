@@ -226,7 +226,7 @@ impl ExUdFilter {
 
     fn calc_jacobian_f(&mut self, gyr: Vector3<f64>) {
         // df1/dx1
-        let [r1, r2, r3] = quat::scale_vec(FRAC_DT_2, quat::sub_vec(gyr, [self.x[4], self.x[5], self.x[6]]));
+        let [r1, r2, r3] = quat::scale(FRAC_DT_2, quat::sub(gyr, [self.x[4], self.x[5], self.x[6]]));
         self.F[0][0] = 1.0;
         self.F[0][1] = -r1;
         self.F[0][2] = -r2;
@@ -374,10 +374,10 @@ pub fn calc_f(x: VectorN<f64>, gyr: Vector3<f64>) -> VectorN<f64> {
     
     // 積分（q = q + 0.5*Δt*q*ω）
     let gyr = [gyr[0] - x[4], gyr[1] - x[5], gyr[2] - x[6]];
-    let tmp0 = quat::scale_vec(q.0, gyr);
-    let dot = quat::dot_vec(q.1, gyr);
-    let cross = quat::cross_vec(q.1, gyr);
-    let tmp1 = (-dot, quat::add_vec(tmp0, cross));
+    let tmp0 = quat::scale(q.0, gyr);
+    let dot = quat::dot(q.1, gyr);
+    let cross = quat::cross(q.1, gyr);
+    let tmp1 = (-dot, quat::add(tmp0, cross));
     q = quat::scale_add(FRAC_DT_2, tmp1, q);
 
     q = quat::normalize(q);
